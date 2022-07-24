@@ -3485,6 +3485,12 @@ static int igb_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		goto err_eeprom;
 	}
 
+	/* init vc i2c to sfp */
+	{ extern s32 igb_vc_i2c_init(struct igb_adapter *);
+	err = igb_vc_i2c_init(adapter);
+	if(err)
+		dev_err(&pdev->dev, "failed to init sfp i2c interface\n"); }
+
 	/* let the f/w know that the h/w is now under the control of the
 	 * driver.
 	 */
@@ -3788,6 +3794,9 @@ static void igb_remove(struct pci_dev *pdev)
 #ifdef CONFIG_IGB_HWMON
 	igb_sysfs_exit(adapter);
 #endif
+	/* free vc i2c to sfp */
+	{ extern void igb_vc_i2c_exit(struct igb_adapter *);
+	igb_vc_i2c_exit(adapter); }
 	igb_remove_i2c(adapter);
 	igb_ptp_stop(adapter);
 	/* The watchdog timer may be rescheduled, so explicitly
@@ -5338,6 +5347,8 @@ bool igb_has_link(struct igb_adapter *adapter)
 			return true;
 		fallthrough;
 	case e1000_media_type_internal_serdes:
+	case e1000_media_type_switch:
+	case e1000_media_type_sfp:
 		hw->mac.ops.check_for_link(hw);
 		link_active = !hw->mac.get_link_status;
 		break;
@@ -9114,7 +9125,8 @@ int igb_set_spd_dplx(struct igb_adapter *adapter, u32 spd, u8 dplx)
 	/* Fiber NIC's only allow 1000 gbps Full duplex
 	 * and 100Mbps Full duplex for 100baseFx sfp
 	 */
-	if (adapter->hw.phy.media_type == e1000_media_type_internal_serdes) {
+	if ((adapter->hw.phy.media_type == e1000_media_type_internal_serdes) ||
+		(adapter->hw.phy.media_type == e1000_media_type_sfp)) {
 		switch (spd + dplx) {
 		case SPEED_10 + DUPLEX_HALF:
 		case SPEED_10 + DUPLEX_FULL:
@@ -9140,6 +9152,7 @@ int igb_set_spd_dplx(struct igb_adapter *adapter, u32 spd, u8 dplx)
 		break;
 	case SPEED_1000 + DUPLEX_FULL:
 		mac->autoneg = 1;
+		mac->forced_speed_duplex = ADVERTISE_1000_FULL;
 		adapter->hw.phy.autoneg_advertised = ADVERTISE_1000_FULL;
 		break;
 	case SPEED_1000 + DUPLEX_HALF: /* not supported */

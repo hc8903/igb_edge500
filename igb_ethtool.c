@@ -143,6 +143,10 @@ static int igb_get_link_ksettings(struct net_device *netdev,
 	u32 speed;
 	u32 supported, advertising;
 
+	extern int igb_m88sw_get_settings(struct igb_adapter *, struct ethtool_link_ksettings *);
+	if(hw->phy.media_type == e1000_media_type_switch)
+		return(igb_m88sw_get_settings(adapter, cmd));
+
 	status = pm_runtime_suspended(&adapter->pdev->dev) ?
 		 0 : rd32(E1000_STATUS);
 	if (hw->phy.media_type == e1000_media_type_copper) {
@@ -264,6 +268,10 @@ static int igb_set_link_ksettings(struct net_device *netdev,
 	struct e1000_hw *hw = &adapter->hw;
 	u32 advertising;
 
+	extern int igb_m88sw_set_settings(struct igb_adapter *, const struct ethtool_link_ksettings *);
+	if(hw->phy.media_type == e1000_media_type_switch)
+		return(igb_m88sw_set_settings(adapter, cmd));
+
 	/* When SoL/IDER sessions are active, autoneg/speed/duplex
 	 * cannot be changed
 	 */
@@ -277,7 +285,7 @@ static int igb_set_link_ksettings(struct net_device *netdev,
 	 * some hardware doesn't allow MDI setting when speed or
 	 * duplex is forced.
 	 */
-	if (cmd->base.eth_tp_mdix_ctrl) {
+	if (cmd->base.eth_tp_mdix_ctrl && hw->phy.media_type != e1000_media_type_sfp) {
 		if (hw->phy.media_type != e1000_media_type_copper)
 			return -EOPNOTSUPP;
 
@@ -296,6 +304,7 @@ static int igb_set_link_ksettings(struct net_device *netdev,
 
 	if (cmd->base.autoneg == AUTONEG_ENABLE) {
 		hw->mac.autoneg = 1;
+		hw->mac.forced_speed_duplex = 0;
 		if (hw->phy.media_type == e1000_media_type_fiber) {
 			hw->phy.autoneg_advertised = advertising |
 						     ADVERTISED_FIBRE |

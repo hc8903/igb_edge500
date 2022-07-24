@@ -80,6 +80,8 @@ enum e1000_media_type {
 	e1000_media_type_copper = 1,
 	e1000_media_type_fiber = 2,
 	e1000_media_type_internal_serdes = 3,
+	e1000_media_type_switch = 4,
+	e1000_media_type_sfp = 5,
 	e1000_num_media_types
 };
 
@@ -110,6 +112,7 @@ enum e1000_phy_type {
 	e1000_phy_82580,
 	e1000_phy_i210,
 	e1000_phy_bcm54616,
+	e1000_phy_m88sw,
 };
 
 enum e1000_bus_type {
@@ -399,6 +402,13 @@ struct e1000_mac_info {
 	struct e1000_thermal_sensor_data thermal_sensor_data;
 };
 
+enum e1000_phy_port {
+	e1000_port_cpu = 0,
+	e1000_port_sgmii,
+	e1000_port_phy,
+	e1000_n_phy_ports,
+};
+
 struct e1000_phy_info {
 	struct e1000_phy_operations ops;
 
@@ -426,6 +436,7 @@ struct e1000_phy_info {
 	u16 pair_length[4];
 
 	u8 mdix;
+	u8 ports[e1000_n_phy_ports];
 
 	bool disable_polarity_correction;
 	bool is_mdix;
@@ -514,6 +525,24 @@ struct e1000_dev_spec_82575 {
 	bool mas_capable;
 };
 
+// switch-as-phy data;
+// controls copper side port;
+
+struct e1000_swphy {
+	u8 autoneg;
+	u8 duplex;
+	u16 speed;
+	u32 autoneg_supported;
+	u32 autoneg_advertised;
+};
+
+enum e1000_vcid {
+	e1000_non_vc = 0,
+	e1000_vc500,
+	e1000_vc5x0,
+	e1000_vcid_max,
+};
+
 struct e1000_hw {
 	void *back;
 
@@ -528,6 +557,7 @@ struct e1000_hw {
 	struct e1000_bus_info  bus;
 	struct e1000_mbx_info mbx;
 	struct e1000_host_mng_dhcp_cookie mng_cookie;
+	struct e1000_swphy swphy;
 
 	union {
 		struct e1000_dev_spec_82575	_82575;
@@ -539,6 +569,7 @@ struct e1000_hw {
 	u16 vendor_id;
 
 	u8  revision_id;
+	u8  vc_id;
 };
 
 struct net_device *igb_get_hw_dev(struct e1000_hw *hw);

@@ -36,11 +36,10 @@ static s32  igb_setup_serdes_link_82575(struct e1000_hw *);
 static s32  igb_write_phy_reg_sgmii_82575(struct e1000_hw *, u32, u16);
 static void igb_clear_hw_cntrs_82575(struct e1000_hw *);
 static s32  igb_acquire_swfw_sync_82575(struct e1000_hw *, u16);
-static s32  igb_get_pcs_speed_and_duplex_82575(struct e1000_hw *, u16 *,
-						 u16 *);
+s32  igb_get_pcs_speed_and_duplex_82575(struct e1000_hw *, u16 *, u16 *);
 static s32  igb_get_phy_id_82575(struct e1000_hw *);
 static void igb_release_swfw_sync_82575(struct e1000_hw *, u16);
-static bool igb_sgmii_active_82575(struct e1000_hw *);
+bool igb_sgmii_active_82575(struct e1000_hw *);
 static s32  igb_reset_init_script_82575(struct e1000_hw *);
 static s32  igb_read_mac_addr_82575(struct e1000_hw *);
 static s32  igb_set_pcie_completion_timeout(struct e1000_hw *hw);
@@ -85,7 +84,7 @@ static void igb_write_vfta_i350(struct e1000_hw *hw, u32 offset, u32 value)
  *  Called to determine if the I2C pins are being used for I2C or as an
  *  external MDIO interface since the two options are mutually exclusive.
  **/
-static bool igb_sgmii_uses_mdio_82575(struct e1000_hw *hw)
+bool igb_sgmii_uses_mdio_82575(struct e1000_hw *hw)
 {
 	u32 reg = 0;
 	bool ext_mdio = false;
@@ -180,6 +179,11 @@ static s32 igb_init_phy_params_82575(struct e1000_hw *hw)
 	struct e1000_phy_info *phy = &hw->phy;
 	s32 ret_val = 0;
 	u32 ctrl_ext;
+
+	extern s32 igb_vc_probe(struct e1000_hw *);
+	ret_val = igb_vc_probe(hw);
+	if (!ret_val)
+		goto out;
 
 	if (hw->phy.media_type != e1000_media_type_copper) {
 		phy->type = e1000_phy_none;
@@ -1354,7 +1358,7 @@ void igb_power_up_serdes_link_82575(struct e1000_hw *hw)
  *  Using the physical coding sub-layer (PCS), retrieve the current speed and
  *  duplex, then store the values in the pointers provided.
  **/
-static s32 igb_get_pcs_speed_and_duplex_82575(struct e1000_hw *hw, u16 *speed,
+s32 igb_get_pcs_speed_and_duplex_82575(struct e1000_hw *hw, u16 *speed,
 						u16 *duplex)
 {
 	struct e1000_mac_info *mac = &hw->mac;
@@ -1792,7 +1796,7 @@ static s32 igb_setup_serdes_link_82575(struct e1000_hw *hw)
  *  which can be enabled for use in the embedded applications.  Simply
  *  return the current state of the sgmii interface.
  **/
-static bool igb_sgmii_active_82575(struct e1000_hw *hw)
+bool igb_sgmii_active_82575(struct e1000_hw *hw)
 {
 	struct e1000_dev_spec_82575 *dev_spec = &hw->dev_spec._82575;
 	return dev_spec->sgmii_active;

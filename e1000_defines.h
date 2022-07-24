@@ -892,6 +892,7 @@
 #define M88E1000_PHY_SPEC_STATUS   0x11  /* PHY Specific Status Register */
 #define M88E1000_EXT_PHY_SPEC_CTRL 0x14  /* Extended PHY Specific Control */
 
+#define M88E1000_PHY_PAGE22        0x16  /* Reg 22 for page setting of regs 0..21,23..28 */
 #define M88E1000_PHY_PAGE_SELECT   0x1D  /* Reg 29 for page number setting */
 #define M88E1000_PHY_GEN_CONTROL   0x1E  /* Its meaning depends on reg 29 */
 
